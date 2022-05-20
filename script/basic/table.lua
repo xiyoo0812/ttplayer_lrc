@@ -131,6 +131,7 @@ local function tmapsort(src)
     return dst
 end
 
+table_ext               = _ENV.table_ext or {}
 table_ext.random        = trandom
 table_ext.random_array  = trandom_array
 table_ext.indexof       = tindexof

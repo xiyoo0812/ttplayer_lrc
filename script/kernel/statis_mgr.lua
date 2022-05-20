@@ -109,9 +109,9 @@ function StatisMgr:on_conn_update(conn_type, conn_count)
 end
 
 -- 统计性能
-function StatisMgr:on_perfeval(eval_data, now_ms)
+function StatisMgr:on_perfeval(eval_data, clock_ms)
     if self.statis_status then
-        local tital_time = now_ms - eval_data.begin_time
+        local tital_time = clock_ms - eval_data.begin_time
         local fields = {
             tital_time = tital_time,
             yield_time = eval_data.yield_time,

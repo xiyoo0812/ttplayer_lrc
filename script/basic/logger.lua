@@ -20,20 +20,29 @@ logger = {}
 logfeature = {}
 
 function logger.init()
-    driver.add_lvl_dest(LOG_LEVEL.ERROR)
+    --配置日志信息
+    local service_name, index = quanta.service_name, quanta.index
+    local path = environ.get("QUANTA_LOG_PATH", "./logs/")
+    local rolltype = environ.number("QUANTA_LOG_ROLL", 0)
+    local maxline = environ.number("QUANTA_LOG_LINE", 100000)
+    driver.option(path, service_name, index, rolltype, maxline);
+    --设置日志过滤
     logger.filter(environ.number("QUANTA_LOG_LVL"))
-end
-
-function logger.daemon(daemon)
-    driver.daemon(daemon)
-end
-
-function logger.setup_graylog()
+    --添加输出目标
+    driver.add_dest(service_name);
+    driver.add_lvl_dest(LOG_LEVEL.ERROR)
+    --设置daemon
+    driver.daemon(environ.status("QUANTA_DAEMON"))
+    --graylog
     local logaddr = environ.get("QUANTA_GRAYLOG_ADDR")
     if logaddr then
         local GrayLog = import("driver/graylog.lua")
         logger.graydriver = GrayLog(logaddr)
     end
+end
+
+function logger.daemon(daemon)
+    driver.daemon(daemon)
 end
 
 function logger.feature(name)
@@ -46,11 +55,11 @@ function logger.feature(name)
     end
 end
 
-function logger.setup_notifier(notifier)
-    logger.notifier = notifier
+function logger.set_webhook(webhook)
+    logger.webhook = webhook
 end
 
-function logger.setup_monitor(monitor)
+function logger.set_monitor(monitor)
     logger.monitor = monitor
 end
 
@@ -78,9 +87,9 @@ local function logger_output(feature, lvl, lvl_name, fmt, log_conf, ...)
     else
         content = sformat(fmt, ...)
     end
-    local notifier = logger.notifier
-    if notify and notifier then
-        notifier:notify(lvl_name, content)
+    local webhook = logger.webhook
+    if notify and webhook then
+        webhook:notify(lvl_name, content)
     end
     local monitor = logger.monitor
     if monitor then
